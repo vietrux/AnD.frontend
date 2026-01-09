@@ -61,8 +61,21 @@ async function fetchApi<T>(
   })
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: "Unknown error" }))
-    throw new Error(error.detail || `HTTP ${response.status}`)
+    const errorBody = await response.json().catch(() => ({ error: "Unknown error" }))
+    // Wrapper returns errors in 'error' field, which may be a JSON string or plain message
+    let errorMessage = errorBody.error || errorBody.detail || `HTTP ${response.status}`
+
+    // Try to parse nested JSON in error field (e.g., {"detail":"..."} )
+    if (typeof errorMessage === 'string' && errorMessage.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(errorMessage)
+        errorMessage = parsed.detail || parsed.error || errorMessage
+      } catch {
+        // Keep original message if parsing fails
+      }
+    }
+
+    throw new Error(errorMessage)
   }
 
   return response.json()
@@ -87,8 +100,21 @@ async function fetchFormData<T>(
   })
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: "Unknown error" }))
-    throw new Error(error.detail || `HTTP ${response.status}`)
+    const errorBody = await response.json().catch(() => ({ error: "Unknown error" }))
+    // Wrapper returns errors in 'error' field, which may be a JSON string or plain message
+    let errorMessage = errorBody.error || errorBody.detail || `HTTP ${response.status}`
+
+    // Try to parse nested JSON in error field (e.g., {"detail":"..."} )
+    if (typeof errorMessage === 'string' && errorMessage.startsWith('{')) {
+      try {
+        const parsed = JSON.parse(errorMessage)
+        errorMessage = parsed.detail || parsed.error || errorMessage
+      } catch {
+        // Keep original message if parsing fails
+      }
+    }
+
+    throw new Error(errorMessage)
   }
 
   return response.json()

@@ -31,11 +31,13 @@ export function GameActionsMenu({ game, mutations, onSuccess }: GameActionsMenuP
         toast.loading("Starting game...", { id: `start-${game.id}` })
 
         // Fire the request in the background
+        // Note: hooks already show error toast with specific message, so we only show success here
         mutations.start(game.id).then((success) => {
             if (success) {
                 toast.success("Game started successfully", { id: `start-${game.id}` })
             } else {
-                toast.error("Failed to start game", { id: `start-${game.id}` })
+                // Dismiss loading toast - hook already showed the error
+                toast.dismiss(`start-${game.id}`)
             }
             onSuccess?.()
         })
@@ -48,7 +50,7 @@ export function GameActionsMenu({ game, mutations, onSuccess }: GameActionsMenuP
             if (success) {
                 toast.success("Game paused", { id: `pause-${game.id}` })
             } else {
-                toast.error("Failed to pause game", { id: `pause-${game.id}` })
+                toast.dismiss(`pause-${game.id}`)
             }
             onSuccess?.()
         })
@@ -61,7 +63,7 @@ export function GameActionsMenu({ game, mutations, onSuccess }: GameActionsMenuP
             if (success) {
                 toast.success("Game stopped", { id: `stop-${game.id}` })
             } else {
-                toast.error("Failed to stop game", { id: `stop-${game.id}` })
+                toast.dismiss(`stop-${game.id}`)
             }
             onSuccess?.()
         })

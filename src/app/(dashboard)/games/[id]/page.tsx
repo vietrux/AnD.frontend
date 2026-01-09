@@ -146,7 +146,8 @@ export default function GameDetailPage({ params }: PageProps) {
         fetchData()
       })
       .catch((error) => {
-        toast.error("Failed to start game", { id: `start-${gameId}` })
+        const message = error instanceof Error ? error.message : "Failed to start game"
+        toast.error(message, { id: `start-${gameId}` })
         console.error(error)
       })
   }
@@ -160,7 +161,8 @@ export default function GameDetailPage({ params }: PageProps) {
         fetchData()
       })
       .catch((error) => {
-        toast.error("Failed to pause game", { id: `pause-${gameId}` })
+        const message = error instanceof Error ? error.message : "Failed to pause game"
+        toast.error(message, { id: `pause-${gameId}` })
         console.error(error)
       })
   }
@@ -174,7 +176,8 @@ export default function GameDetailPage({ params }: PageProps) {
         fetchData()
       })
       .catch((error) => {
-        toast.error("Failed to stop game", { id: `stop-${gameId}` })
+        const message = error instanceof Error ? error.message : "Failed to stop game"
+        toast.error(message, { id: `stop-${gameId}` })
         console.error(error)
       })
   }
@@ -188,7 +191,8 @@ export default function GameDetailPage({ params }: PageProps) {
         fetchData()
       })
       .catch((error) => {
-        toast.error("Failed to force stop game", { id: `forcestop-${gameId}` })
+        const message = error instanceof Error ? error.message : "Failed to force stop game"
+        toast.error(message, { id: `forcestop-${gameId}` })
         console.error(error)
       })
   }
@@ -207,7 +211,8 @@ export default function GameDetailPage({ params }: PageProps) {
       setNewTeamId("")
       fetchData()
     } catch (error) {
-      toast.error("Failed to add team")
+      const message = error instanceof Error ? error.message : "Failed to add team"
+      toast.error(message)
       console.error(error)
     } finally {
       setActionLoading(false)
@@ -223,7 +228,8 @@ export default function GameDetailPage({ params }: PageProps) {
       setDeleteTeamId(null)
       fetchData()
     } catch (error) {
-      toast.error("Failed to remove team")
+      const message = error instanceof Error ? error.message : "Failed to remove team"
+      toast.error(message)
       console.error(error)
     }
   }
@@ -241,7 +247,8 @@ export default function GameDetailPage({ params }: PageProps) {
       setIsAssignDialogOpen(false)
       fetchData()
     } catch (error) {
-      toast.error(`Failed to assign ${assignType}`)
+      const message = error instanceof Error ? error.message : `Failed to assign ${assignType}`
+      toast.error(message)
       console.error(error)
     } finally {
       setActionLoading(false)

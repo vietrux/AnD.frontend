@@ -44,19 +44,38 @@ export function TeamDashboard({ user }: TeamDashboardProps) {
     const [flagInput, setFlagInput] = useState("")
     const [currentGame, setCurrentGame] = useState<Game | null>(null)
 
-    // Fetch the current running game
+    // Fetch the current running game that user's team is participating in
     useEffect(() => {
         async function fetchCurrentGame() {
+            if (!user?.teamId) {
+                setCurrentGame(null)
+                return
+            }
+
             try {
                 const response = await api.games.list()
                 const runningGame = response.games.find((g) => g.status === "running")
-                setCurrentGame(runningGame || null)
+
+                if (runningGame) {
+                    // Check if user's team is actually in this game
+                    try {
+                        const teams = await api.games.teams.list(runningGame.id)
+                        const isInGame = teams.some(t => t.team_id === user.teamId)
+                        setCurrentGame(isInGame ? runningGame : null)
+                    } catch {
+                        // If we can't fetch teams, don't show the game
+                        setCurrentGame(null)
+                    }
+                } else {
+                    setCurrentGame(null)
+                }
             } catch (error) {
                 console.error("Failed to fetch games:", error)
+                setCurrentGame(null)
             }
         }
         fetchCurrentGame()
-    }, [])
+    }, [user?.teamId])
 
     async function handleSubmitFlag() {
         if (!currentGame) {

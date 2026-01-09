@@ -114,18 +114,33 @@ export function TeamGamesView() {
                 <div className="grid gap-4 md:grid-cols-2">
                     {games.map((game) => {
                         const team = teamInfo[game.id]
+                        const isParticipating = team !== null
                         return (
-                            <Card key={game.id}>
+                            <Card
+                                key={game.id}
+                                className={isParticipating
+                                    ? "border-emerald-500/50 ring-1 ring-emerald-500/20 bg-emerald-500/5"
+                                    : ""
+                                }
+                            >
                                 <CardHeader>
                                     <div className="flex items-center justify-between">
                                         <CardTitle className="flex items-center gap-2">
                                             <Gamepad2 className="size-5" />
                                             {game.name}
                                         </CardTitle>
-                                        <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
-                                            <Clock className="mr-1 size-3" />
-                                            Tick {game.currentTick}
-                                        </Badge>
+                                        <div className="flex items-center gap-2">
+                                            {isParticipating && (
+                                                <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
+                                                    <Check className="mr-1 size-3" />
+                                                    Participating
+                                                </Badge>
+                                            )}
+                                            <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">
+                                                <Clock className="mr-1 size-3" />
+                                                Tick {game.currentTick}
+                                            </Badge>
+                                        </div>
                                     </div>
                                 </CardHeader>
                                 <CardContent className="space-y-4">
