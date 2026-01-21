@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { Shield, Trophy, ArrowLeft, RefreshCw, Users, Swords, Target, Medal } from "lucide-react"
+import { Shield, Trophy, ArrowLeft, RefreshCw, Users, Swords, Target, Medal, Wifi, WifiOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { api } from "@/lib/api/client"
-import type { Game, ScoreboardEntry } from "@/lib/types"
+import { useGameWebSocket } from "@/hooks/use-websocket"
+import { TickTimer } from "@/components/features/games/tick-timer"
+import type { Game } from "@/lib/types"
 
 function getRankDisplay(rank: number) {
     if (rank === 1) return <Medal className="h-5 w-5 text-yellow-500" />
@@ -21,10 +23,21 @@ function getRankDisplay(rank: number) {
 export default function LiveScoreboardPage() {
     const [games, setGames] = useState<Game[]>([])
     const [selectedGameId, setSelectedGameId] = useState<string>("")
-    const [scoreboard, setScoreboard] = useState<ScoreboardEntry[]>([])
     const [isLoading, setIsLoading] = useState(true)
-    const [isRefreshing, setIsRefreshing] = useState(false)
 
+    // WebSocket connection for real-time updates
+    const {
+        isConnected,
+        isConnecting,
+        tickInfo,
+        scoreboard,
+        gameState,
+        error: wsError,
+        reconnect,
+        requestScoreboardRefresh,
+    } = useGameWebSocket(selectedGameId || null)
+
+    // Fetch list of games on mount
     useEffect(() => {
         async function fetchGames() {
             try {
@@ -47,26 +60,6 @@ export default function LiveScoreboardPage() {
         }
         fetchGames()
     }, [])
-
-    useEffect(() => {
-        if (!selectedGameId) return
-
-        async function fetchScoreboard() {
-            try {
-                setIsRefreshing(true)
-                const data = await api.scoreboard.get(selectedGameId)
-                setScoreboard(data.entries || [])
-            } catch (error) {
-                console.error("Failed to fetch scoreboard:", error)
-                setScoreboard([])
-            } finally {
-                setIsRefreshing(false)
-            }
-        }
-        fetchScoreboard()
-        const interval = setInterval(fetchScoreboard, 30000)
-        return () => clearInterval(interval)
-    }, [selectedGameId])
 
     const selectedGame = games.find(g => g.id === selectedGameId)
 
@@ -102,17 +95,37 @@ export default function LiveScoreboardPage() {
                             <ArrowLeft className="h-5 w-5" />
                         </Button>
                     </Link>
-                    <div>
+                    <div className="flex-1">
                         <h1 className="text-2xl font-bold flex items-center gap-2">
                             <Trophy className="h-6 w-6" />
                             Live Scoreboard
                         </h1>
                         <p className="text-sm text-muted-foreground">Real-time competition standings</p>
                     </div>
+
+                    {/* Connection Status */}
+                    <div className="flex items-center gap-2">
+                        {isConnected ? (
+                            <Badge variant="outline" className="text-green-600 border-green-600">
+                                <Wifi className="h-3 w-3 mr-1" />
+                                Live
+                            </Badge>
+                        ) : isConnecting ? (
+                            <Badge variant="outline" className="text-yellow-600 border-yellow-600">
+                                <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+                                Connecting
+                            </Badge>
+                        ) : (
+                            <Badge variant="outline" className="text-red-600 border-red-600">
+                                <WifiOff className="h-3 w-3 mr-1" />
+                                Offline
+                            </Badge>
+                        )}
+                    </div>
                 </div>
 
-                {/* Game Selector */}
-                <div className="flex items-center gap-4 mb-6">
+                {/* Game Selector & Controls */}
+                <div className="flex flex-wrap items-center gap-4 mb-6">
                     <Select value={selectedGameId} onValueChange={setSelectedGameId}>
                         <SelectTrigger className="w-[280px]">
                             <SelectValue placeholder="Select a game" />
@@ -131,22 +144,40 @@ export default function LiveScoreboardPage() {
                         </SelectContent>
                     </Select>
 
-                    <Button variant="outline" size="icon" onClick={() => setSelectedGameId(selectedGameId)} disabled={isRefreshing}>
-                        <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={requestScoreboardRefresh}
+                        disabled={!isConnected}
+                        title="Refresh scoreboard"
+                    >
+                        <RefreshCw className="h-4 w-4" />
                     </Button>
 
-                    {selectedGame && (
-                        <div className="flex items-center gap-3 ml-auto">
-                            <Badge variant={selectedGame.status === "running" ? "default" : "secondary"}>
-                                {selectedGame.status.toUpperCase()}
-                            </Badge>
-                            <span className="text-sm text-muted-foreground">
-                                Tick: {selectedGame.current_tick}
-                                {selectedGame.max_ticks && ` / ${selectedGame.max_ticks}`}
-                            </span>
-                        </div>
+                    {!isConnected && !isConnecting && (
+                        <Button variant="outline" size="sm" onClick={reconnect}>
+                            Reconnect
+                        </Button>
                     )}
                 </div>
+
+                {/* Tick Timer */}
+                {selectedGameId && (
+                    <div className="mb-6">
+                        <TickTimer
+                            tickInfo={tickInfo}
+                            maxTicks={gameState?.maxTicks || selectedGame?.max_ticks}
+                            variant="default"
+                        />
+                    </div>
+                )}
+
+                {/* WebSocket Error */}
+                {wsError && (
+                    <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800">
+                        <p className="text-sm text-red-600 dark:text-red-400">{wsError}</p>
+                    </div>
+                )}
 
                 {/* Scoreboard */}
                 <Card>
@@ -154,6 +185,7 @@ export default function LiveScoreboardPage() {
                         <CardTitle>Standings</CardTitle>
                         <CardDescription>
                             {scoreboard.length} team{scoreboard.length !== 1 ? "s" : ""} competing
+                            {isConnected && <span className="ml-2 text-green-600">• Live updates</span>}
                         </CardDescription>
                     </CardHeader>
                     <CardContent>

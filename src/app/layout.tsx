@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import "./globals.css"
 
 import { ThemeProvider } from "@/components/providers/theme-provider"
+import { ModeToggle } from "@/components/mode-toggle"
 import { AuthProvider } from "@/contexts/auth-context"
 import { Toaster } from "@/components/ui/sonner"
 
@@ -37,6 +38,9 @@ export default function RootLayout({
         >
           <AuthProvider>
             {children}
+            <div className="fixed bottom-4 right-4 z-50">
+              <ModeToggle />
+            </div>
           </AuthProvider>
           <Toaster richColors position="top-right" />
         </ThemeProvider>

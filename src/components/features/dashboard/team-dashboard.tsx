@@ -57,13 +57,13 @@ export function TeamDashboard({ user }: TeamDashboardProps) {
                 const runningGame = response.games.find((g) => g.status === "running")
 
                 if (runningGame) {
-                    // Check if user's team is actually in this game
+                    // Check if user's team is actually in this game by fetching their own team data
+                    // Students can only access their own team's info, not list all teams
                     try {
-                        const teams = await api.games.teams.list(runningGame.id)
-                        const isInGame = teams.some(t => t.team_id === user.teamId)
-                        setCurrentGame(isInGame ? runningGame : null)
+                        const teamData = await api.games.teams.get(runningGame.id, user.teamId)
+                        setCurrentGame(teamData ? runningGame : null)
                     } catch {
-                        // If we can't fetch teams, don't show the game
+                        // If we can't fetch team data (404 = not in game, 403 = no access), don't show the game
                         setCurrentGame(null)
                     }
                 } else {
